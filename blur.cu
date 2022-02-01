@@ -80,22 +80,6 @@ void recombineChannels(const unsigned char* const redChannel,
 unsigned char *d_red, *d_green, *d_blue;
 float         *d_filter;
 
-void allocateMemoryAndCopyToGPU(const size_t numRowsImage, const size_t numColsImage,
-                                const float* const h_filter, const size_t filterWidth)
-{
-
-  //mem for 3 mem channels
-  cudaMalloc(&d_red,   sizeof(unsigned char) * numRowsImage * numColsImage);
-  cudaMalloc(&d_green, sizeof(unsigned char) * numRowsImage * numColsImage);
-  cudaMalloc(&d_blue,  sizeof(unsigned char) * numRowsImage * numColsImage);
-
-  
-  //Allocate mem for filter
-  cudaMalloc(&d_filter, sizeof(float) * filterWidth * filterWidth);
-
-  //copy filter on host
-  cudaMemcpy(d_filter, h_filter, sizeof(float) * filterWidth * filterWidth, cudaMemcpyHostToDevice);
-}
 
 void kernel(const uchar4 * const h_inputImageRGBA, uchar4 * const d_inputImageRGBA,
                         uchar4* const d_outputImageRGBA, const size_t numRows, const size_t numCols,
@@ -130,6 +114,7 @@ void kernel(const uchar4 * const h_inputImageRGBA, uchar4 * const d_inputImageRG
                                              numRows,
                                              numCols);
   cudaDeviceSynchronize(); 
+
 }
 
 

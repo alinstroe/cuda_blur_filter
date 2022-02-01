@@ -28,8 +28,24 @@ void kernel(const uchar4 * const h_inputImageRGBA, uchar4 * const d_inputImageRG
                         unsigned char *d_blueBlurred,
                         const int filterWidth);
 
-void allocateMemoryAndCopyToGPU(const size_t numRowsImage, const size_t numColsImage,
-                                const float* const h_filter, const size_t filterWidth);
+
+void allocateFilter(const size_t numRowsImage, const size_t numColsImage,
+                                const float* const h_filter, const size_t filterWidth)
+{
+
+  //work with RGB (Alpha channel removed)
+  cudaMalloc(&d_red,   sizeof(unsigned char) * numRowsImage * numColsImage);
+  cudaMalloc(&d_green, sizeof(unsigned char) * numRowsImage * numColsImage);
+  cudaMalloc(&d_blue,  sizeof(unsigned char) * numRowsImage * numColsImage);
+
+  
+  //Allocate mem for filter on GPU
+  cudaMalloc(&d_filter, sizeof(float) * filterWidth * filterWidth);
+
+  //copy filter on GPU 
+  cudaMemcpy(d_filter, h_filter, sizeof(float) * filterWidth * filterWidth, cudaMemcpyHostToDevice);
+}
+
 
 
 int main(int argc, char **argv) {
@@ -43,7 +59,7 @@ int main(int argc, char **argv) {
 
   string filename="flower_300x300.jpg";
   string output_file="iesire.jpg";
-  /*
+  
   if (argc == 3) {
     input_file  = std::string(argv[1]);
     output_file = std::string(argv[2]);
@@ -52,7 +68,9 @@ int main(int argc, char **argv) {
     std::cerr << "Usage: ./filter input_file output_file" << std::endl;
     exit(1);
   }
-  */
+
+
+  // init context in the GPU matrix
   cudaFree(0);
 
   cv::Mat image = cv::imread(filename.c_str(), CV_LOAD_IMAGE_COLOR);
@@ -71,16 +89,6 @@ int main(int argc, char **argv) {
 
   const size_t numPixels = numRows() * numCols();
  
-  //allocate memory on the device for both input and output
-  cudaMalloc(&d_inputImageRGBA, sizeof(uchar4) * numPixels);
-  cudaMalloc(&d_outputImageRGBA, sizeof(uchar4) * numPixels);
-  //clean the input
-  cudaMemset(d_outputImageRGBA, 0, numPixels * sizeof(uchar4));
-
-  //Transfer Data
-  //copy input array to the GPU
-  cudaMemcpy(d_inputImageRGBA, h_inputImageRGBA, sizeof(uchar4) * numPixels, cudaMemcpyHostToDevice);
-
   d_inputImageRGBA__  = d_inputImageRGBA;
   d_outputImageRGBA__ = d_outputImageRGBA;
   
@@ -111,7 +119,22 @@ int main(int argc, char **argv) {
     }
   }
 
+
+
+
   auto start = std::chrono::high_resolution_clock::now();
+
+
+  //allocate memory on the device for both input and output
+  cudaMalloc(&d_inputImageRGBA, sizeof(uchar4) * numPixels);
+  cudaMalloc(&d_outputImageRGBA, sizeof(uchar4) * numPixels);
+  //clean the input
+  cudaMemset(d_outputImageRGBA, 0, numPixels * sizeof(uchar4));
+
+  //Transfer Data
+  //copy input array to the GPU
+  cudaMemcpy(d_inputImageRGBA, h_inputImageRGBA, sizeof(uchar4) * numPixels, cudaMemcpyHostToDevice);
+
   //allocate memory for destination images 
   //for all three channels RGB
   cudaMalloc(&d_redBlurred,    sizeof(unsigned char) * numPixels);
