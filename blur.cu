@@ -1,4 +1,7 @@
 
+extern "C" unsigned char *d_red, *d_green, *d_blue;
+extern "C" float         *d_filter;
+
 
 __global__ void gaussian_blur(const unsigned char* const inputChannel,
                    unsigned char* const outputChannel,
@@ -76,9 +79,6 @@ void recombineChannels(const unsigned char* const redChannel,
 
   outputImageRGBA[thread_1D_pos] = outputPixel;
 }
-
-unsigned char *d_red, *d_green, *d_blue;
-float         *d_filter;
 
 
 void kernel(const uchar4 * const h_inputImageRGBA, uchar4 * const d_inputImageRGBA,

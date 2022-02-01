@@ -7,10 +7,19 @@
 using namespace cv;
 using namespace std;
 //https://docs.opencv.org/3.4/d4/d86/group__imgproc__filter.html#gaabe8c836e97159a9193fb0b11ac52cf1
-int main(int argc, char **arg)
+int main(int argc, char **argv)
 {
-string input_file="flower_300x300.jpg";
-string output_file="iesire_cpu.jpg";
+string input_file="test2_soare.jpg";
+string output_file="iesire_soare_cpu.jpg";
+
+if (argc == 3) {
+    input_file  = std::string(argv[1]);
+    output_file = std::string(argv[2]);
+ }
+else {
+    cout << "Input file or output file not specified. Using default ones" << endl;
+}
+
 
 Mat image = imread(input_file.c_str(), CV_LOAD_IMAGE_COLOR);
   if (image.empty()) {
@@ -25,8 +34,6 @@ auto stop = std::chrono::high_resolution_clock::now();
 
 std::cout << "Done in " << std::chrono::duration_cast<std::chrono::milliseconds>(stop-start).count() << " ms" << std::endl;
 cv::imwrite(output_file.c_str(), output_image);
-
-
 
 return 0;
 } 

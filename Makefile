@@ -10,3 +10,5 @@ clean:
 	rm blur_gpu
 	rm blur.o
 	rm blur_cpu
+	rm *_cpu.jpg
+	rm *_gpu.jpg

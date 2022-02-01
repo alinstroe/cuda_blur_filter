@@ -16,6 +16,9 @@ cv::Mat imageOutputRGBA;
 uchar4 *d_inputImageRGBA__;
 uchar4 *d_outputImageRGBA__;
 
+unsigned char *d_red, *d_green, *d_blue;
+float         *d_filter;
+
 size_t numRows() { return imageInputRGBA.rows; }
 size_t numCols() { return imageInputRGBA.cols; }
 
@@ -29,25 +32,6 @@ void kernel(const uchar4 * const h_inputImageRGBA, uchar4 * const d_inputImageRG
                         const int filterWidth);
 
 
-void allocateFilter(const size_t numRowsImage, const size_t numColsImage,
-                                const float* const h_filter, const size_t filterWidth)
-{
-
-  //work with RGB (Alpha channel removed)
-  cudaMalloc(&d_red,   sizeof(unsigned char) * numRowsImage * numColsImage);
-  cudaMalloc(&d_green, sizeof(unsigned char) * numRowsImage * numColsImage);
-  cudaMalloc(&d_blue,  sizeof(unsigned char) * numRowsImage * numColsImage);
-
-  
-  //Allocate mem for filter on GPU
-  cudaMalloc(&d_filter, sizeof(float) * filterWidth * filterWidth);
-
-  //copy filter on GPU 
-  cudaMemcpy(d_filter, h_filter, sizeof(float) * filterWidth * filterWidth, cudaMemcpyHostToDevice);
-}
-
-
-
 int main(int argc, char **argv) {
 
   uchar4 *h_inputImageRGBA,  *d_inputImageRGBA;
@@ -57,25 +41,24 @@ int main(int argc, char **argv) {
   float *h_filter;
   int    filterWidth;
 
-  string filename="flower_300x300.jpg";
-  string output_file="iesire.jpg";
+  string input_file="flower_300x300.jpg";
+  string output_file="iesire_gpu.jpg";
   
   if (argc == 3) {
     input_file  = std::string(argv[1]);
     output_file = std::string(argv[2]);
   }
   else {
-    std::cerr << "Usage: ./filter input_file output_file" << std::endl;
-    exit(1);
+    cout << "Input file or output file not specified. Using default ones" << endl;
   }
 
 
   // init context in the GPU matrix
   cudaFree(0);
 
-  cv::Mat image = cv::imread(filename.c_str(), CV_LOAD_IMAGE_COLOR);
+  cv::Mat image = cv::imread(input_file.c_str(), CV_LOAD_IMAGE_COLOR);
   if (image.empty()) {
-    cerr << "Couldn't open file: " << filename << endl;
+    cerr << "Couldn't open file: " << input_file << endl;
     exit(1);
   }
 
@@ -88,10 +71,7 @@ int main(int argc, char **argv) {
   h_outputImageRGBA = (uchar4 *)imageOutputRGBA.ptr<unsigned char>(0);
 
   const size_t numPixels = numRows() * numCols();
- 
-  d_inputImageRGBA__  = d_inputImageRGBA;
-  d_outputImageRGBA__ = d_outputImageRGBA;
-  
+   
   //now create the filter that they will use, orig 9 and 2
   const int blurKernelWidth = 5;
   const float blurKernelSigma = 4.;
@@ -135,6 +115,9 @@ int main(int argc, char **argv) {
   //copy input array to the GPU
   cudaMemcpy(d_inputImageRGBA, h_inputImageRGBA, sizeof(uchar4) * numPixels, cudaMemcpyHostToDevice);
 
+  d_inputImageRGBA__  = d_inputImageRGBA;
+  d_outputImageRGBA__ = d_outputImageRGBA;
+
   //allocate memory for destination images 
   //for all three channels RGB
   cudaMalloc(&d_redBlurred,    sizeof(unsigned char) * numPixels);
@@ -145,7 +128,21 @@ int main(int argc, char **argv) {
   cudaMemset(d_greenBlurred, 0, sizeof(unsigned char) * numPixels);
   cudaMemset(d_blueBlurred,  0, sizeof(unsigned char) * numPixels);
 
-  allocateMemoryAndCopyToGPU(numRows(), numCols(), h_filter, filterWidth);
+  //allocateMemoryAndCopyToGPU(numRows(), numCols(), h_filter, filterWidth);
+
+
+  //work with RGB (Alpha channel removed)
+  cudaMalloc(&d_red,   sizeof(unsigned char) * numPixels);
+  cudaMalloc(&d_green, sizeof(unsigned char) * numPixels);
+  cudaMalloc(&d_blue,  sizeof(unsigned char) * numPixels);
+
+  
+  //Allocate mem for filter on GPU
+  cudaMalloc(&d_filter, sizeof(float) * filterWidth * filterWidth);
+
+  //copy filter on GPU 
+  cudaMemcpy(d_filter, h_filter, sizeof(float) * filterWidth * filterWidth, cudaMemcpyHostToDevice);
+
   kernel(h_inputImageRGBA, d_inputImageRGBA, d_outputImageRGBA, numRows(), numCols(), d_redBlurred, d_greenBlurred, d_blueBlurred, filterWidth);
 
   cudaDeviceSynchronize(); 
@@ -153,7 +150,7 @@ int main(int argc, char **argv) {
   //copy the output back to the host
   cudaMemcpy(imageOutputRGBA.ptr<unsigned char>(0), d_outputImageRGBA__, sizeof(uchar4) * numPixels, cudaMemcpyDeviceToHost);
   auto stop = std::chrono::high_resolution_clock::now();
-  std::cout << "Done in " << std::chrono::duration_cast<std::chrono::microseconds>(stop-start).count() << " us" << endl;
+  std::cout << "Done in " << std::chrono::duration_cast<std::chrono::milliseconds>(stop-start).count() << " ms" << endl;
   //convert the image back
   cv::Mat imageOutputBGR;
   cv::cvtColor(imageOutputRGBA, imageOutputBGR, CV_RGBA2BGR);
