@@ -1,4 +1,6 @@
 
+extern "C" unsigned char *gpu_red, *gpu_green, *gpu_blue;
+extern "C" float         *gpu_filter;
 
 __global__ void gaussian_blur(const unsigned char* const inputChannel,
                    unsigned char* const outputChannel,
@@ -6,15 +8,18 @@ __global__ void gaussian_blur(const unsigned char* const inputChannel,
                    const float* const filter, const int filterWidth)
 {
 
-
+  //define iterators 
   int px = blockIdx.x * blockDim.x + threadIdx.x;
   int py = blockIdx.y * blockDim.y + threadIdx.y;
+
+  //verify out of bound conditions
   if (px >= numCols || py >= numRows) {
       return;
   }
 
   float c = 0.0f;
-
+  
+  //perform convolution
   for (int fx = 0; fx < filterWidth; fx++) {
     for (int fy = 0; fy < filterWidth; fy++) {
       int imagex = px + fx - filterWidth / 2;
@@ -29,8 +34,7 @@ __global__ void gaussian_blur(const unsigned char* const inputChannel,
 }
 
 // split into rgb channels
-__global__
-void separateChannels(const uchar4* const inputImageRGBA,
+__global__ void separateChannels(const uchar4* const inputImageRGBA,
                       int numRows,
                       int numCols,
                       unsigned char* const redChannel,
@@ -50,8 +54,7 @@ void separateChannels(const uchar4* const inputImageRGBA,
 }
 
 // combine color channels
-__global__
-void recombineChannels(const unsigned char* const redChannel,
+__global__ void recombineChannels(const unsigned char* const redChannel,
                        const unsigned char* const greenChannel,
                        const unsigned char* const blueChannel,
                        uchar4* const outputImageRGBA,
@@ -77,31 +80,12 @@ void recombineChannels(const unsigned char* const redChannel,
   outputImageRGBA[thread_1D_pos] = outputPixel;
 }
 
-unsigned char *d_red, *d_green, *d_blue;
-float         *d_filter;
 
-void allocateMemoryAndCopyToGPU(const size_t numRowsImage, const size_t numColsImage,
-                                const float* const h_filter, const size_t filterWidth)
-{
-
-  //mem for 3 mem channels
-  cudaMalloc(&d_red,   sizeof(unsigned char) * numRowsImage * numColsImage);
-  cudaMalloc(&d_green, sizeof(unsigned char) * numRowsImage * numColsImage);
-  cudaMalloc(&d_blue,  sizeof(unsigned char) * numRowsImage * numColsImage);
-
-  
-  //Allocate mem for filter
-  cudaMalloc(&d_filter, sizeof(float) * filterWidth * filterWidth);
-
-  //copy filter on host
-  cudaMemcpy(d_filter, h_filter, sizeof(float) * filterWidth * filterWidth, cudaMemcpyHostToDevice);
-}
-
-void kernel(const uchar4 * const h_inputImageRGBA, uchar4 * const d_inputImageRGBA,
-                        uchar4* const d_outputImageRGBA, const size_t numRows, const size_t numCols,
-                        unsigned char *d_redBlurred, 
-                        unsigned char *d_greenBlurred, 
-                        unsigned char *d_blueBlurred,
+void kernel(const uchar4 * const host_inputImageRGBA, uchar4 * const gpu_inputImageRGBA,
+                        uchar4* const gpu_outputImageRGBA, const size_t numRows, const size_t numCols,
+                        unsigned char *gpu_redBlurred, 
+                        unsigned char *gpu_greenBlurred, 
+                        unsigned char *gpu_blueBlurred,
                         const int filterWidth)
 {
   //set threads per block
@@ -111,25 +95,26 @@ void kernel(const uchar4 * const h_inputImageRGBA, uchar4 * const d_inputImageRG
   const dim3 gridSize(numCols/blockSize.x+1,numRows/blockSize.y+1,1);
 
   //separate color channels
-  separateChannels<<<gridSize, blockSize>>>(d_inputImageRGBA,numRows,numCols,d_red,d_green,d_blue);
+  separateChannels<<<gridSize, blockSize>>>(gpu_inputImageRGBA,numRows,numCols,gpu_red,gpu_green,gpu_blue);
 
-  cudaDeviceSynchronize();
+  //cudaDeviceSynchronize();
 
-  // call blur for each channel
-  gaussian_blur<<<gridSize, blockSize>>>(d_red,d_redBlurred,numRows,numCols,d_filter,filterWidth);
-  gaussian_blur<<<gridSize, blockSize>>>(d_green,d_greenBlurred,numRows,numCols,d_filter,filterWidth);
-  gaussian_blur<<<gridSize, blockSize>>>(d_blue,d_blueBlurred,numRows,numCols,d_filter,filterWidth);
+  // call blur for each channel (RGB)
+  gaussian_blur<<<gridSize, blockSize>>>(gpu_red,gpu_redBlurred,numRows,numCols,gpu_filter,filterWidth);
+  gaussian_blur<<<gridSize, blockSize>>>(gpu_green,gpu_greenBlurred,numRows,numCols,gpu_filter,filterWidth);
+  gaussian_blur<<<gridSize, blockSize>>>(gpu_blue,gpu_blueBlurred,numRows,numCols,gpu_filter,filterWidth);
 
-  cudaDeviceSynchronize(); 
+  //cudaDeviceSynchronize(); 
 
   // recombine channels to final image
-  recombineChannels<<<gridSize, blockSize>>>(d_redBlurred,
-                                             d_greenBlurred,
-                                             d_blueBlurred,
-                                             d_outputImageRGBA,
+  recombineChannels<<<gridSize, blockSize>>>(gpu_redBlurred,
+                                             gpu_greenBlurred,
+                                             gpu_blueBlurred,
+                                             gpu_outputImageRGBA,
                                              numRows,
                                              numCols);
-  cudaDeviceSynchronize(); 
+  //cudaDeviceSynchronize(); 
+
 }
 
 

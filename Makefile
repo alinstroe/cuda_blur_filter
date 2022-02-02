@@ -2,12 +2,12 @@ FLAGS=`pkg-config --cflags opencv`
 LIBS=`pkg-config --libs opencv`
 all: cpu gpu
 gpu:
-	nvcc -c blur.cu
-	nvcc -ccbin g++ blur.o main.cpp -I/usr/include/opencv -lopencv_core -lopencv_highgui -lopencv_imgproc -lcuda -lcudart -o blur_gpu `pkg-config opencv --cflags --libs` -lcudart
+	nvcc -c src/gauss_gpu.cu
+	nvcc -ccbin g++ gauss_gpu.o src/main.cpp -o exec_gpu ${LIBS} ${FLAGS} -lcuda
 cpu:
-	g++ -o blur_cpu  blur_cpu.cpp `pkg-config opencv --cflags --libs`
+	g++ -o exec_cpu  src/gauss_cpu.cpp ${FLAGS} ${LIBS}
 clean:
-	rm gauss_exec
-	rm blur.o
-	rm blur_cpu
-	rm core.*
+	rm exec_*
+	rm *.o
+	rm images/*_cpu.jpg
+	rm images/*_gpu.jpg
