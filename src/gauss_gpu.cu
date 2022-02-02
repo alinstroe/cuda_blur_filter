@@ -97,7 +97,7 @@ void kernel(const uchar4 * const host_inputImageRGBA, uchar4 * const gpu_inputIm
   //separate color channels
   separateChannels<<<gridSize, blockSize>>>(gpu_inputImageRGBA,numRows,numCols,gpu_red,gpu_green,gpu_blue);
 
-  cudaDeviceSynchronize();
+  //cudaDeviceSynchronize();
 
   // call blur for each channel (RGB)
   gaussian_blur<<<gridSize, blockSize>>>(gpu_red,gpu_redBlurred,numRows,numCols,gpu_filter,filterWidth);
@@ -113,7 +113,7 @@ void kernel(const uchar4 * const host_inputImageRGBA, uchar4 * const gpu_inputIm
                                              gpu_outputImageRGBA,
                                              numRows,
                                              numCols);
-  cudaDeviceSynchronize(); 
+  //cudaDeviceSynchronize(); 
 
 }
 

@@ -146,7 +146,8 @@ int main(int argc, char **argv) {
 
   kernel(host_inputImageRGBA, gpu_inputImageRGBA, gpu_outputImageRGBA, getRowsCount(), getColsCount(), gpu_redBlurred, gpu_greenBlurred, gpu_blueBlurred, filterWidth);
   
-  cudaDeviceSynchronize(); 
+  //cudaDeviceSynchronize(); 
+
   //copy the output back to the host
   cudaMemcpy(imageOutputRGBA.ptr<unsigned char>(0), gpu_outputImageRGBA__, sizeof(uchar4) * image_size_pixels, cudaMemcpyDeviceToHost);
   auto stop = std::chrono::high_resolution_clock::now();
@@ -159,11 +160,18 @@ int main(int argc, char **argv) {
   cv::imwrite(output_file.c_str(), imageOutputBGR);
 
   //cleanup
+  delete [] host_filter;
   cudaFree(gpu_inputImageRGBA__);
   cudaFree(gpu_outputImageRGBA__);
   cudaFree(gpu_redBlurred);
   cudaFree(gpu_greenBlurred);
   cudaFree(gpu_blueBlurred);
+
+  cudaFree(gpu_red);
+  cudaFree(gpu_green);
+  cudaFree(gpu_blue);
+
+  cudaFree(gpu_filter);
 
   return 0;
 }
