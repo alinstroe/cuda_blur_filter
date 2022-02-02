@@ -104,7 +104,7 @@ void kernel(const uchar4 * const host_inputImageRGBA, uchar4 * const gpu_inputIm
   gaussian_blur<<<gridSize, blockSize>>>(gpu_green,gpu_greenBlurred,numRows,numCols,gpu_filter,filterWidth);
   gaussian_blur<<<gridSize, blockSize>>>(gpu_blue,gpu_blueBlurred,numRows,numCols,gpu_filter,filterWidth);
 
-  cudaDeviceSynchronize(); 
+  //cudaDeviceSynchronize(); 
 
   // recombine channels to final image
   recombineChannels<<<gridSize, blockSize>>>(gpu_redBlurred,
