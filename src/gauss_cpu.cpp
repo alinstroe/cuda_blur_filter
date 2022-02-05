@@ -10,8 +10,8 @@ using namespace std;
 
 int main(int argc, char **argv)
 {
-string input_file="images/test2_soare.jpg";
-string output_file="images/iesire_soare_cpu.jpg";
+string input_file="images/bike_6000x4000.jpg";
+string output_file="images/iesire_bike_cpu.jpg";
 
 if (argc == 3) {
     input_file  = std::string(argv[1]);

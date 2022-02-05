@@ -46,8 +46,8 @@ int main(int argc, char **argv) {
   float *host_filter;
   int    filterWidth;
 
-  string input_file="images/flower_300x300.jpg";
-  string output_file="images/iesire_gpu.jpg";
+  string input_file="images/bike_6000x4000.jpg";
+  string output_file="images/iesire_bike_gpu.jpg";
   
   if (argc == 3) {
     input_file  = std::string(argv[1]);
