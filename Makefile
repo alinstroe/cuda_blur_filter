@@ -1,5 +1,5 @@
-FLAGS=`pkg-config --cflags opencv`
-LIBS=`pkg-config --libs opencv`
+FLAGS=`pkg-config --cflags opencv4`
+LIBS=`pkg-config --libs opencv4`
 all: cpu gpu
 gpu:
 	nvcc -c src/gauss_gpu.cu

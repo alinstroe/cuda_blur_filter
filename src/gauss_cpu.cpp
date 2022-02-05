@@ -1,6 +1,6 @@
 #include <opencv2/highgui/highgui.hpp>
 #include "opencv2/imgproc/imgproc.hpp"
-#include <opencv2/core/core.hpp>
+#include <opencv2/core.hpp>
 #include <iostream>
 #include <string>
 #include <chrono>
@@ -20,9 +20,7 @@ if (argc == 3) {
 else {
     cout << "Input file or output file not specified. Using default ones" << endl;
 }
-
-
-Mat image = imread(input_file.c_str(), CV_LOAD_IMAGE_COLOR);
+Mat image = cv::imread(input_file.c_str());
   if (image.empty()) {
     std::cerr << "Couldn't open file: " << input_file << std::endl;
     exit(1);
@@ -34,7 +32,7 @@ GaussianBlur(image, output_image, Size( 5, 5), 4.0, 0 );//applying Gaussian filt
 auto stop = std::chrono::high_resolution_clock::now();
 
 std::cout << "Done in " << std::chrono::duration_cast<std::chrono::milliseconds>(stop-start).count() << " ms" << std::endl;
-cv::imwrite(output_file.c_str(), output_image);
+imwrite(output_file.c_str(), output_image);
 
 return 0;
 } 

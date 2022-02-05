@@ -1,6 +1,7 @@
 #include <iostream>
 #include <opencv2/core/core.hpp>
 #include <opencv2/highgui/highgui.hpp>
+#include <opencv2/imgproc/types_c.h>
 #include <opencv2/opencv.hpp>
 #include <string>
 #include <cuda.h>
@@ -59,7 +60,7 @@ int main(int argc, char **argv) {
   // init context in the GPU
   cudaFree(0);
 
-  cv::Mat image = cv::imread(input_file.c_str(), CV_LOAD_IMAGE_COLOR);
+  cv::Mat image = cv::imread(input_file.c_str());
   if (image.empty()) {
     cerr << "Couldn't open file: " << input_file << endl;
     exit(1);
